@@ -29,3 +29,5 @@ export interface FlowchartData {
 }
 
 export type AddCardFunction = (sourceCardId: number, connectionType: 'next' | 'yes' | 'no', position: { x: number, y: number }) => void;
+export type RemoveCardFunction = (cardId: number) => void;
+export type CardTypeOption = 'action' | 'condition' | 'email' | 'trigger';

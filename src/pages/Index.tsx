@@ -3,9 +3,14 @@ import React, { useState } from 'react';
 import { Box, Typography, Container } from '@mui/material';
 import Flowchart from '../components/Flowchart';
 import { flowchartData as initialFlowchartData } from '../data/flowchartData';
+import { FlowchartData } from '../types/flowTypes';
 
 const Index = () => {
   const [flowData, setFlowData] = useState(initialFlowchartData);
+
+  const handleDataChange = (newData: FlowchartData) => {
+    setFlowData(newData);
+  };
 
   return (
     <Container maxWidth={false} sx={{ p: 3 }}>
@@ -18,8 +23,8 @@ const Index = () => {
         </Typography>
       </Box>
       
-      <Box sx={{ width: '100%', minHeight: '80vh', position: 'relative' }}>
-        <Flowchart data={flowData} />
+      <Box sx={{ width: '100%', minHeight: '80vh', position: 'relative', border: '1px solid #e0e0e0', borderRadius: '8px', overflow: 'hidden' }}>
+        <Flowchart data={flowData} onDataChange={handleDataChange} />
       </Box>
     </Container>
   );

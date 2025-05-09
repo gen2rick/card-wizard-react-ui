@@ -1,20 +1,22 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Box, Paper } from '@mui/material';
 import FlowchartCard from './FlowchartCard';
 import DecisionButton from './DecisionButton';
 import ConnectionLine from './ConnectionLine';
 import ConnectionDot from './ConnectionDot';
 import AddCardButton from './AddCardButton';
-import { FlowchartData, Connection, AddCardFunction, CardType } from '../types/flowTypes';
+import { FlowchartData, Connection, AddCardFunction, RemoveCardFunction, CardType, CardTypeOption } from '../types/flowTypes';
 
 interface FlowchartProps {
   data: FlowchartData;
+  onDataChange?: (data: FlowchartData) => void;
 }
 
-const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
+const Flowchart: React.FC<FlowchartProps> = ({ data, onDataChange }) => {
   const [flowchartData, setFlowchartData] = useState<FlowchartData>(data);
   const [connections, setConnections] = useState<any[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Generate connections based on the node relationships
@@ -103,25 +105,23 @@ const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
     });
     
     setConnections(generatedConnections);
-  }, [flowchartData]);
+
+    // Notify parent component of data change if callback is provided
+    if (onDataChange) {
+      onDataChange(flowchartData);
+    }
+  }, [flowchartData, onDataChange]);
 
   // Add a new card when the + button is clicked
-  const handleAddCard: AddCardFunction = (sourceCardId, connectionType, position) => {
+  const handleAddCard = (sourceCardId: number, connectionType: 'next' | 'yes' | 'no', position: { x: number, y: number }, cardType: CardTypeOption) => {
     // Generate a new ID (just max id + 1 for simplicity)
     const newId = Math.max(...flowchartData.nodes.map(node => node.id)) + 1;
     
-    // Determine the new card type (default to 'action')
-    let newCardType: 'trigger' | 'condition' | 'action' | 'email' = 'action';
-    // For condition nodes, we'll add email nodes
-    if (connectionType === 'yes' || connectionType === 'no') {
-      newCardType = 'email';
-    }
-
     // Create the new card
     const newCard: CardType = {
       id: newId,
-      type: newCardType,
-      text: `New ${newCardType} card`,
+      type: cardType,
+      text: `New ${cardType} card`,
       position: {
         x: position.x - 150, // Center the card at the endpoint
         y: position.y + 20 // Add a small offset
@@ -159,6 +159,44 @@ const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
     });
   };
 
+  // Remove a card
+  const handleRemoveCard: RemoveCardFunction = (cardId) => {
+    // Find which nodes reference this cardId
+    const referencingNodes = flowchartData.nodes.filter(node => 
+      (node.next && node.next.includes(cardId)) || 
+      node.yes === cardId || 
+      node.no === cardId
+    );
+
+    // Update the nodes to remove references to the removed card
+    const updatedNodes = flowchartData.nodes
+      .filter(node => node.id !== cardId) // Remove the card
+      .map(node => {
+        if (node.next && node.next.includes(cardId)) {
+          // Remove cardId from the next array
+          return {
+            ...node,
+            next: node.next.filter(id => id !== cardId)
+          };
+        } else if (node.yes === cardId) {
+          // Remove yes reference
+          const { yes, ...rest } = node;
+          return rest;
+        } else if (node.no === cardId) {
+          // Remove no reference
+          const { no, ...rest } = node;
+          return rest;
+        }
+        return node;
+      });
+
+    // Update the flowchart data
+    setFlowchartData({
+      nodes: updatedNodes,
+      connections: flowchartData.connections
+    });
+  };
+
   // Render connection lines and dots
   const renderConnections = () => {
     const elements: JSX.Element[] = [];
@@ -184,7 +222,7 @@ const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
             key={`${conn.id}-add-button`}
             top={conn.toPos.y}
             left={conn.toPos.x}
-            onClick={() => handleAddCard(conn.from, conn.type, conn.toPos)}
+            onAddCard={(cardType) => handleAddCard(conn.from, conn.type, conn.toPos, cardType)}
           />
         );
         return;
@@ -273,8 +311,11 @@ const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
         minHeight: '100vh',
         backgroundColor: '#f5f5f5',
         padding: 4,
-        overflow: 'auto'
+        overflow: 'auto',
+        backgroundImage: 'radial-gradient(circle at 1px 1px, #ddd 1px, transparent 0)',
+        backgroundSize: '20px 20px',
       }}
+      ref={containerRef}
     >
       {/* Render the connections */}
       {renderConnections()}
@@ -290,7 +331,7 @@ const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
             zIndex: 2
           }}
         >
-          <FlowchartCard card={node} />
+          <FlowchartCard card={node} onRemove={handleRemoveCard} />
         </Box>
       ))}
     </Paper>

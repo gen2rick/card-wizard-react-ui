@@ -1,15 +1,25 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, IconButton } from '@mui/material';
 import { Add } from '@mui/icons-material';
+import { CardTypeOption } from '../types/flowTypes';
+import CardTypeSelector from './CardTypeSelector';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface AddCardButtonProps {
   top: number;
   left: number;
-  onClick: () => void;
+  onAddCard: (cardType: CardTypeOption) => void;
 }
 
-const AddCardButton: React.FC<AddCardButtonProps> = ({ top, left, onClick }) => {
+const AddCardButton: React.FC<AddCardButtonProps> = ({ top, left, onAddCard }) => {
+  const [open, setOpen] = useState(false);
+
+  const handleAddCard = (cardType: CardTypeOption) => {
+    onAddCard(cardType);
+    setOpen(false);
+  };
+
   return (
     <Box
       sx={{
@@ -20,22 +30,28 @@ const AddCardButton: React.FC<AddCardButtonProps> = ({ top, left, onClick }) => 
         zIndex: 3,
       }}
     >
-      <IconButton
-        onClick={onClick}
-        sx={{
-          backgroundColor: '#ffffff',
-          border: '2px solid #ccc',
-          width: '24px',
-          height: '24px',
-          '&:hover': {
-            backgroundColor: '#f0f0f0',
-            borderColor: '#999',
-          },
-        }}
-        size="small"
-      >
-        <Add fontSize="small" />
-      </IconButton>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <IconButton
+            sx={{
+              backgroundColor: '#ffffff',
+              border: '2px solid #ccc',
+              width: '24px',
+              height: '24px',
+              '&:hover': {
+                backgroundColor: '#f0f0f0',
+                borderColor: '#999',
+              },
+            }}
+            size="small"
+          >
+            <Add fontSize="small" />
+          </IconButton>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-auto border-none shadow-lg">
+          <CardTypeSelector onSelect={handleAddCard} onClose={() => setOpen(false)} />
+        </PopoverContent>
+      </Popover>
     </Box>
   );
 };
