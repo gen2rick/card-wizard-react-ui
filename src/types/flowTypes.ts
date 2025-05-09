@@ -27,3 +27,5 @@ export interface FlowchartData {
   nodes: CardType[];
   connections: Connection[];
 }
+
+export type AddCardFunction = (sourceCardId: number, connectionType: 'next' | 'yes' | 'no', position: { x: number, y: number }) => void;

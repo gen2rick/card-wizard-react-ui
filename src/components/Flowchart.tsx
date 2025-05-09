@@ -5,24 +5,26 @@ import FlowchartCard from './FlowchartCard';
 import DecisionButton from './DecisionButton';
 import ConnectionLine from './ConnectionLine';
 import ConnectionDot from './ConnectionDot';
-import { FlowchartData, Connection } from '../types/flowTypes';
+import AddCardButton from './AddCardButton';
+import { FlowchartData, Connection, AddCardFunction, CardType } from '../types/flowTypes';
 
 interface FlowchartProps {
   data: FlowchartData;
 }
 
 const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
+  const [flowchartData, setFlowchartData] = useState<FlowchartData>(data);
   const [connections, setConnections] = useState<any[]>([]);
 
   useEffect(() => {
     // Generate connections based on the node relationships
     const generatedConnections: any[] = [];
     
-    data.nodes.forEach(node => {
+    flowchartData.nodes.forEach(node => {
       // Process 'next' connections
       if (node.next && node.next.length > 0) {
         node.next.forEach(nextId => {
-          const nextNode = data.nodes.find(n => n.id === nextId);
+          const nextNode = flowchartData.nodes.find(n => n.id === nextId);
           if (nextNode) {
             generatedConnections.push({
               id: `${node.id}-next-${nextId}`,
@@ -34,11 +36,22 @@ const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
             });
           }
         });
+      } else if (node.next && node.next.length === 0) {
+        // Add a connection endpoint for nodes with empty next array
+        generatedConnections.push({
+          id: `${node.id}-next-endpoint`,
+          from: node.id,
+          to: null,
+          fromPos: { x: node.position.x + 150, y: node.position.y + 60 },
+          toPos: { x: node.position.x + 150, y: node.position.y + 120 },
+          type: 'next',
+          isEndpoint: true
+        });
       }
       
       // Process 'yes' connections
       if (node.yes) {
-        const yesNode = data.nodes.find(n => n.id === node.yes);
+        const yesNode = flowchartData.nodes.find(n => n.id === node.yes);
         if (yesNode) {
           generatedConnections.push({
             id: `${node.id}-yes-${node.yes}`,
@@ -49,11 +62,22 @@ const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
             type: 'yes'
           });
         }
+      } else if (node.type === 'condition' && !node.yes) {
+        // Add a connection endpoint for condition nodes without yes connection
+        generatedConnections.push({
+          id: `${node.id}-yes-endpoint`,
+          from: node.id,
+          to: null,
+          fromPos: { x: node.position.x + 100, y: node.position.y + 60 },
+          toPos: { x: node.position.x + 50, y: node.position.y + 120 },
+          type: 'yes',
+          isEndpoint: true
+        });
       }
       
       // Process 'no' connections
       if (node.no) {
-        const noNode = data.nodes.find(n => n.id === node.no);
+        const noNode = flowchartData.nodes.find(n => n.id === node.no);
         if (noNode) {
           generatedConnections.push({
             id: `${node.id}-no-${node.no}`,
@@ -64,18 +88,109 @@ const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
             type: 'no'
           });
         }
+      } else if (node.type === 'condition' && !node.no) {
+        // Add a connection endpoint for condition nodes without no connection
+        generatedConnections.push({
+          id: `${node.id}-no-endpoint`,
+          from: node.id,
+          to: null,
+          fromPos: { x: node.position.x + 200, y: node.position.y + 60 },
+          toPos: { x: node.position.x + 250, y: node.position.y + 120 },
+          type: 'no',
+          isEndpoint: true
+        });
       }
     });
     
     setConnections(generatedConnections);
-  }, [data]);
+  }, [flowchartData]);
+
+  // Add a new card when the + button is clicked
+  const handleAddCard: AddCardFunction = (sourceCardId, connectionType, position) => {
+    // Generate a new ID (just max id + 1 for simplicity)
+    const newId = Math.max(...flowchartData.nodes.map(node => node.id)) + 1;
+    
+    // Determine the new card type (default to 'action')
+    let newCardType: 'trigger' | 'condition' | 'action' | 'email' = 'action';
+    // For condition nodes, we'll add email nodes
+    if (connectionType === 'yes' || connectionType === 'no') {
+      newCardType = 'email';
+    }
+
+    // Create the new card
+    const newCard: CardType = {
+      id: newId,
+      type: newCardType,
+      text: `New ${newCardType} card`,
+      position: {
+        x: position.x - 150, // Center the card at the endpoint
+        y: position.y + 20 // Add a small offset
+      },
+      next: []
+    };
+
+    // Update the source card to point to the new card
+    const updatedNodes = flowchartData.nodes.map(node => {
+      if (node.id === sourceCardId) {
+        if (connectionType === 'next') {
+          return {
+            ...node,
+            next: [...(node.next || []), newId]
+          };
+        } else if (connectionType === 'yes') {
+          return {
+            ...node,
+            yes: newId
+          };
+        } else if (connectionType === 'no') {
+          return {
+            ...node,
+            no: newId
+          };
+        }
+      }
+      return node;
+    });
+
+    // Update the flowchart data
+    setFlowchartData({
+      nodes: [...updatedNodes, newCard],
+      connections: flowchartData.connections
+    });
+  };
 
   // Render connection lines and dots
   const renderConnections = () => {
     const elements: JSX.Element[] = [];
     
     connections.forEach(conn => {
-      // For simplicity, just draw straight lines
+      // For endpoints (connections without a target node), render an add button
+      if (conn.isEndpoint) {
+        // Draw vertical line down
+        elements.push(
+          <ConnectionLine
+            key={`${conn.id}-down`}
+            top={conn.fromPos.y}
+            left={conn.fromPos.x}
+            width={2}
+            height={Math.abs(conn.toPos.y - conn.fromPos.y)}
+            direction="vertical"
+          />
+        );
+        
+        // Add the + button at the endpoint
+        elements.push(
+          <AddCardButton
+            key={`${conn.id}-add-button`}
+            top={conn.toPos.y}
+            left={conn.toPos.x}
+            onClick={() => handleAddCard(conn.from, conn.type, conn.toPos)}
+          />
+        );
+        return;
+      }
+      
+      // For regular connections, just draw straight lines
       // In a real application, you'd need more complex path calculation
       
       // Draw vertical line down from source
@@ -165,7 +280,7 @@ const Flowchart: React.FC<FlowchartProps> = ({ data }) => {
       {renderConnections()}
       
       {/* Render the cards */}
-      {data.nodes.map(node => (
+      {flowchartData.nodes.map(node => (
         <Box 
           key={node.id} 
           sx={{ 

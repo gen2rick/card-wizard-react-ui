@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Container } from '@mui/material';
 import Flowchart from '../components/Flowchart';
-import { flowchartData } from '../data/flowchartData';
+import { flowchartData as initialFlowchartData } from '../data/flowchartData';
 
 const Index = () => {
+  const [flowData, setFlowData] = useState(initialFlowchartData);
+
   return (
     <Container maxWidth={false} sx={{ p: 3 }}>
       <Box sx={{ mb: 4 }}>
@@ -17,7 +19,7 @@ const Index = () => {
       </Box>
       
       <Box sx={{ width: '100%', minHeight: '80vh', position: 'relative' }}>
-        <Flowchart data={flowchartData} />
+        <Flowchart data={flowData} />
       </Box>
     </Container>
   );
