@@ -1,13 +1,25 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from 'react';
+import { Box, Typography, Container } from '@mui/material';
+import Flowchart from '../components/Flowchart';
+import { flowchartData } from '../data/flowchartData';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <Container maxWidth={false} sx={{ p: 3 }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Email Campaign Flow Builder
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          This flowchart represents the steps in an email marketing campaign triggered by product purchases
+        </Typography>
+      </Box>
+      
+      <Box sx={{ width: '100%', minHeight: '80vh', position: 'relative' }}>
+        <Flowchart data={flowchartData} />
+      </Box>
+    </Container>
   );
 };
 

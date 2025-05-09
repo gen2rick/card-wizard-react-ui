@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,15 @@
 
   body {
     @apply bg-background text-foreground;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Ensure the flowchart container spans full width and height */
+  #root {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
   }
 }
