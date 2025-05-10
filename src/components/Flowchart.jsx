@@ -6,21 +6,21 @@ import DecisionButton from './DecisionButton';
 import ConnectionLine from './ConnectionLine';
 import ConnectionDot from './ConnectionDot';
 import AddCardButton from './AddCardButton';
-import { FlowchartData, Connection, AddCardFunction, RemoveCardFunction, CardType, CardTypeOption } from '../types/flowTypes';
 
-interface FlowchartProps {
-  data: FlowchartData;
-  onDataChange?: (data: FlowchartData) => void;
-}
-
-const Flowchart: React.FC<FlowchartProps> = ({ data, onDataChange }) => {
-  const [flowchartData, setFlowchartData] = useState<FlowchartData>(data);
-  const [connections, setConnections] = useState<any[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
+/**
+ * @param {Object} props
+ * @param {import('../types/flowTypes').FlowchartData} props.data
+ * @param {Function} [props.onDataChange]
+ */
+const Flowchart = ({ data, onDataChange }) => {
+  const [flowchartData, setFlowchartData] = useState(data);
+  const [connections, setConnections] = useState([]);
+  const containerRef = useRef(null);
+  const [draggingCardId, setDraggingCardId] = useState(null);
 
   useEffect(() => {
     // Generate connections based on the node relationships
-    const generatedConnections: any[] = [];
+    const generatedConnections = [];
     
     flowchartData.nodes.forEach(node => {
       // Process 'next' connections
@@ -112,13 +112,43 @@ const Flowchart: React.FC<FlowchartProps> = ({ data, onDataChange }) => {
     }
   }, [flowchartData, onDataChange]);
 
+  // Handle card drag start
+  const handleDragStart = (cardId) => {
+    setDraggingCardId(cardId);
+  };
+
+  // Handle card dragging
+  const handleDrag = (cardId, newPosition) => {
+    setFlowchartData(prevData => {
+      const updatedNodes = prevData.nodes.map(node => {
+        if (node.id === cardId) {
+          return {
+            ...node,
+            position: newPosition
+          };
+        }
+        return node;
+      });
+
+      return {
+        ...prevData,
+        nodes: updatedNodes
+      };
+    });
+  };
+
+  // Handle card drag end
+  const handleDragEnd = () => {
+    setDraggingCardId(null);
+  };
+
   // Add a new card when the + button is clicked
-  const handleAddCard = (sourceCardId: number, connectionType: 'next' | 'yes' | 'no', position: { x: number, y: number }, cardType: CardTypeOption) => {
+  const handleAddCard = (sourceCardId, connectionType, position, cardType) => {
     // Generate a new ID (just max id + 1 for simplicity)
     const newId = Math.max(...flowchartData.nodes.map(node => node.id)) + 1;
     
     // Create the new card
-    const newCard: CardType = {
+    const newCard = {
       id: newId,
       type: cardType,
       text: `New ${cardType} card`,
@@ -160,7 +190,7 @@ const Flowchart: React.FC<FlowchartProps> = ({ data, onDataChange }) => {
   };
 
   // Remove a card
-  const handleRemoveCard: RemoveCardFunction = (cardId) => {
+  const handleRemoveCard = (cardId) => {
     // Find which nodes reference this cardId
     const referencingNodes = flowchartData.nodes.filter(node => 
       (node.next && node.next.includes(cardId)) || 
@@ -199,7 +229,7 @@ const Flowchart: React.FC<FlowchartProps> = ({ data, onDataChange }) => {
 
   // Render connection lines and dots
   const renderConnections = () => {
-    const elements: JSX.Element[] = [];
+    const elements = [];
     
     connections.forEach(conn => {
       // For endpoints (connections without a target node), render an add button
@@ -328,10 +358,16 @@ const Flowchart: React.FC<FlowchartProps> = ({ data, onDataChange }) => {
             position: 'absolute', 
             top: node.position.y, 
             left: node.position.x,
-            zIndex: 2
+            zIndex: node.id === draggingCardId ? 1000 : 2
           }}
         >
-          <FlowchartCard card={node} onRemove={handleRemoveCard} />
+          <FlowchartCard 
+            card={node} 
+            onRemove={handleRemoveCard}
+            onDragStart={handleDragStart}
+            onDrag={handleDrag}
+            onDragEnd={handleDragEnd}
+          />
         </Box>
       ))}
     </Paper>

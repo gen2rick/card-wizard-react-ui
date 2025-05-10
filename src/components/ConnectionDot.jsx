@@ -2,12 +2,12 @@
 import React from 'react';
 import { Box } from '@mui/material';
 
-interface ConnectionDotProps {
-  top: number;
-  left: number;
-}
-
-const ConnectionDot: React.FC<ConnectionDotProps> = ({ top, left }) => {
+/**
+ * @param {Object} props
+ * @param {number} props.top
+ * @param {number} props.left
+ */
+const ConnectionDot = ({ top, left }) => {
   return (
     <Box
       sx={{

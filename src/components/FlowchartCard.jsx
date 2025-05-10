@@ -1,16 +1,22 @@
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, Typography, Box } from '@mui/material';
-import { CardType, RemoveCardFunction } from '../types/flowTypes';
 import { X } from 'lucide-react';
 
-interface FlowchartCardProps {
-  card: CardType;
-  style?: React.CSSProperties;
-  onRemove?: RemoveCardFunction;
-}
+/**
+ * @param {Object} props
+ * @param {import('../types/flowTypes').CardType} props.card
+ * @param {Object} [props.style]
+ * @param {import('../types/flowTypes').RemoveCardFunction} [props.onRemove]
+ * @param {function} [props.onDragStart]
+ * @param {function} [props.onDrag]
+ * @param {function} [props.onDragEnd]
+ */
+const FlowchartCard = ({ card, style, onRemove, onDragStart, onDrag, onDragEnd }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const cardRef = useRef(null);
+  const dragOffset = useRef({ x: 0, y: 0 });
 
-const FlowchartCard: React.FC<FlowchartCardProps> = ({ card, style, onRemove }) => {
   let borderColor = '#ddd';
   let leftBorderColor = '#ddd';
   let backgroundColor = '#fff';
@@ -41,15 +47,60 @@ const FlowchartCard: React.FC<FlowchartCardProps> = ({ card, style, onRemove }) 
       break;
   }
 
-  const handleRemove = (e: React.MouseEvent) => {
+  const handleRemove = (e) => {
     e.stopPropagation();
     if (onRemove) {
       onRemove(card.id);
     }
   };
 
+  const handleMouseDown = (e) => {
+    if (card.type === 'trigger') return; // Don't allow dragging the trigger card
+    
+    const rect = cardRef.current.getBoundingClientRect();
+    dragOffset.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+    
+    setIsDragging(true);
+    
+    if (onDragStart) {
+      onDragStart(card.id);
+    }
+    
+    // Add event listeners for drag and drop
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    
+    const containerRect = cardRef.current.parentElement.parentElement.getBoundingClientRect();
+    const newX = e.clientX - containerRect.left - dragOffset.current.x;
+    const newY = e.clientY - containerRect.top - dragOffset.current.y;
+    
+    if (onDrag) {
+      onDrag(card.id, { x: newX, y: newY });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    
+    if (onDragEnd) {
+      onDragEnd(card.id);
+    }
+    
+    // Remove event listeners
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
   return (
     <Card
+      ref={cardRef}
       sx={{
         position: 'relative',
         width: '300px',
@@ -60,10 +111,11 @@ const FlowchartCard: React.FC<FlowchartCardProps> = ({ card, style, onRemove }) 
         display: 'flex',
         padding: '12px',
         backgroundColor,
-        transition: 'transform 0.2s, box-shadow 0.2s',
+        transition: isDragging ? 'none' : 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
           boxShadow: '0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23)',
-          transform: 'translateY(-2px)'
+          transform: isDragging ? 'none' : 'translateY(-2px)',
+          cursor: card.type === 'trigger' ? 'default' : 'move'
         },
         ...style,
         '&::before': {
@@ -76,8 +128,11 @@ const FlowchartCard: React.FC<FlowchartCardProps> = ({ card, style, onRemove }) 
           backgroundColor: leftBorderColor,
           borderTopLeftRadius: '4px',
           borderBottomLeftRadius: '4px',
-        }
+        },
+        opacity: isDragging ? 0.8 : 1,
+        zIndex: isDragging ? 1000 : 2
       }}
+      onMouseDown={handleMouseDown}
     >
       <Box sx={{ pl: 2, width: '100%', pr: 4 }}>
         <Typography variant="body1" component="div">

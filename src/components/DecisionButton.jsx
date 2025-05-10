@@ -2,12 +2,12 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 
-interface DecisionButtonProps {
-  text: string;
-  type: 'yes' | 'no';
-}
-
-const DecisionButton: React.FC<DecisionButtonProps> = ({ text, type }) => {
+/**
+ * @param {Object} props
+ * @param {string} props.text
+ * @param {('yes'|'no')} props.type
+ */
+const DecisionButton = ({ text, type }) => {
   const backgroundColor = type === 'yes' ? '#10b981' : '#ef4444'; // Green for yes, red for no
   
   return (

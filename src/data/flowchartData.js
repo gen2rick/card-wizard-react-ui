@@ -1,7 +1,5 @@
 
-import { FlowchartData } from '../types/flowTypes';
-
-export const flowchartData: FlowchartData = {
+export const flowchartData = {
   nodes: [
     {
       id: 1,
