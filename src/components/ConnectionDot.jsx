@@ -19,7 +19,7 @@ const ConnectionDot = ({ top, left }) => {
         borderRadius: '50%',
         backgroundColor: '#fff',
         border: '2px solid #6366f1', // Indigo color for better visibility
-        zIndex: 1,
+        zIndex: 3,
         transform: 'translate(-50%, -50%)',
         transition: 'transform 0.2s ease-in-out, background-color 0.2s ease-in-out',
         '&:hover': {

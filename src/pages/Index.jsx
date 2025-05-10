@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Box, Typography, Container } from '@mui/material';
-import Flowchart from '../components/Flowchart';
+import CanvasFlowchart from '../components/CanvasFlowchart';
 import { flowchartData as initialFlowchartData } from '../data/flowchartData';
 
 const Index = () => {
@@ -24,7 +24,7 @@ const Index = () => {
       </Box>
       
       <Box sx={{ width: '100%', minHeight: '80vh', position: 'relative', border: '1px solid #e0e0e0', borderRadius: '8px', overflow: 'hidden' }}>
-        <Flowchart data={flowData} onDataChange={handleDataChange} />
+        <CanvasFlowchart data={flowData} onDataChange={handleDataChange} />
       </Box>
     </Container>
   );

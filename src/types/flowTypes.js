@@ -38,6 +38,9 @@ export const CARD_TYPES = {
  * @property {number} to
  * @property {ConnectionPoint[]} points
  * @property {('next'|'yes'|'no')} type
+ * @property {boolean} [isEndpoint]
+ * @property {ConnectionPoint} fromPos
+ * @property {ConnectionPoint} toPos
  */
 
 /**
